@@ -1,6 +1,6 @@
 {
   "name": "@nitedani/logging-nestjs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "lib/cjs/index.js",
   "author": {
@@ -37,7 +37,8 @@
   "peerDependencies": {
     "@nestjs/common": "^8.0.0",
     "rxjs": "^7.0.0",
-    "winston": "^3.0.0"
+    "winston": "^3.0.0",
+    "reflect-metadata": "^0.1.13"
   },
   "files": [
     "/lib"
