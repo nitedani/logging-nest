@@ -1,0 +1,88 @@
+import { ctx } from "./storage";
+
+export class Formatter {
+  transform(info, _opts) {
+    const context = ctx();
+    const logObj: any = {};
+
+    if (context && context.requestId) {
+      logObj.requestId = context.requestId;
+    }
+
+    if (typeof info === "object") {
+      Object.assign(logObj, info);
+    } else {
+      logObj.message = info;
+    }
+
+    return logObj;
+  }
+}
+
+export const getErrorJson = (error: any) => {
+  if (typeof error === "object") {
+    const message = error.message;
+    const status = error.status || error.statusCode || 500;
+
+    return {
+      message,
+      status,
+    };
+  }
+
+  return { message: error, status: 500 };
+};
+
+export const getError = (error: any) => {
+  if (typeof error === "object") {
+    const { message, status, statusCode, stack, ...rest } = error;
+
+    const _status = status || statusCode || 500;
+    return {
+      message,
+      status: _status,
+      stack,
+      ...rest,
+    };
+  }
+
+  return { message: error, status: 500 };
+};
+
+export const getInfo = (req, res, error?) => {
+  const { method, url } = req;
+  const { statusCode } = res;
+
+  const message: string = `HTTP request served - ${statusCode} - ${method} - ${url}`;
+
+  const toLog = {
+    message,
+    remote_addr: req.ip,
+    timestamp: new Date(),
+    protocol: req.protocol,
+    request: {
+      time: Date.now() - req.start,
+      method,
+      hostname: req.hostname,
+      uri: url,
+      size: req.socket.bytesRead,
+      user_agent: req.headers["user-agent"],
+      referer: req.headers["referer"],
+    },
+    response: {
+      status: statusCode,
+      size: res.getHeader("Content-Length"),
+    },
+  };
+
+  if (error) {
+    const { stack, message, ...rest } = getError(error);
+    Object.assign(toLog, {
+      stack: [error.stack].flat(),
+      error_message: message,
+      ...rest,
+    });
+  }
+
+  return toLog;
+};
