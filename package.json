@@ -1,5 +1,5 @@
 {
-  "name": "@nitedani/logging",
+  "name": "@nitedani/logging-nestjs",
   "version": "0.0.1",
   "description": "",
   "main": "lib/cjs/index.js",
@@ -16,7 +16,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nitedani/logging.git"
+    "url": "https://github.com/nitedani/logging-nest"
   },
   "typings": "./lib/cjs/index.d.ts",
   "scripts": {
