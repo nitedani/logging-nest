@@ -53,8 +53,8 @@ export const getInfo = (req, res, error?) => {
   const { method, url } = req;
   const { statusCode } = res;
 
+  const bytesWritten = req.socket.bytesWritten - req.socket._prevBytesWritten;
   const message: string = `HTTP request served - ${statusCode} - ${method} - ${url}`;
-
   const toLog = {
     message,
     remote_addr: req.ip,
@@ -71,16 +71,17 @@ export const getInfo = (req, res, error?) => {
     },
     response: {
       status: statusCode,
-      size: res.getHeader("Content-Length"),
+      size: res.getHeader("Content-Length") || bytesWritten,
     },
   };
 
   if (error) {
-    const { stack, message, ...rest } = getError(error);
+    const { name, stack, message /* ...rest  */ } = getError(error);
     Object.assign(toLog, {
-      stack: [error.stack].flat(),
+      stack: [stack].flat(),
       error_message: message,
-      ...rest,
+      error_name: name,
+      //error_meta: rest,
     });
   }
 

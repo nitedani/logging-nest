@@ -4,20 +4,73 @@ import { setLogger, withContext } from "./common/storage";
 import { LoggingInterceptor } from "./nest/http.interceptor";
 import { AllExceptionsFilter } from "./nest/exception.filter";
 import * as winston from "winston";
-
 import { INestApplication } from "@nestjs/common";
+import * as getMetricEmitter from "@newrelic/native-metrics";
+//@ts-ignore
+import LokiTransport = require("winston-loki");
+/*
+
+if (emitter.gcEnabled) {
+  setInterval(() => {
+    const gcMetrics = emitter.getGCMetrics();
+    for (const type in gcMetrics) {
+      console.log("GC type name:", type);
+      console.log("GC type id:", gcMetrics[type].typeId);
+      console.log("GC metrics:", gcMetrics[type].metrics);
+    }
+  }, 1000);
+}
+
+if (emitter.usageEnabled) {
+  emitter.on("usage", (usage) => console.log(usage));
+}
+*/
 
 const consoleTransport = new winston.transports.Console({
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.simple(),
+    winston.format.colorize({
+      all: true,
+      colors: { info: "green", warn: "orange", error: "red" },
+    })
+  ),
 });
 
-const logging = (app: INestApplication, options?: winston.LoggerOptions) => {
-  app.use(withContext);
+interface Options {
+  console: boolean;
+  loki?: {
+    host: string;
+    labels: { [key: string]: string };
+    level?: string;
+  };
+}
 
-  options ??= {};
-  options.format ??= new Formatter();
-  options.transports ??= [consoleTransport];
-  const logger = winston.createLogger(options);
+const logging = (app: INestApplication, options?: Options) => {
+  app.use(withContext);
+  const transports: winston.transport[] = [];
+  if (options?.console) {
+    transports.push(consoleTransport);
+  }
+  if (options?.loki) {
+    const { host, labels, level } = options.loki;
+    const lokiTransport = new LokiTransport({
+      host,
+      labels,
+      format: winston.format.json(),
+      level: level || "debug",
+    });
+    transports.push(lokiTransport);
+  }
+
+  app.use((req, _res, next) => {
+    req.socket._prevBytesWritten = req.socket.bytesWritten;
+    next();
+  });
+
+  const logger = winston.createLogger({
+    format: new Formatter(),
+    transports,
+  });
   setLogger(logger);
   const _logger = new Logger();
 
@@ -32,6 +85,18 @@ const logging = (app: INestApplication, options?: winston.LoggerOptions) => {
   process.on("unhandledRejection", (error) => {
     _logger.error(error);
   });
+
+  setInterval(() => {
+    _logger.debug!({ memory: process.memoryUsage() });
+  }, 10000);
+
+  const emitter = getMetricEmitter({ timeout: 15000 });
+  emitter.unbind();
+  emitter.bind(10000);
+  setInterval(() => {
+    const loopMetrics = emitter.getLoopMetrics();
+    _logger.debug!({ loopMetrics: loopMetrics.usage });
+  }, 10000);
 
   /*
     app.use(async (req, res: Response, next) => {

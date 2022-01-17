@@ -23,8 +23,10 @@ export class LoggingInterceptor implements NestInterceptor {
 
     return call$.handle().pipe(
       tap((): void => {
-        const toLog = getInfo(req, res);
-        this.logger.log(toLog);
+        res.once("close", () => {
+          const toLog = getInfo(req, res);
+          this.logger.log(toLog);
+        });
       })
     );
   }
