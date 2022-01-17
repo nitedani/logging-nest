@@ -27,13 +27,7 @@ if (emitter.usageEnabled) {
 */
 
 const consoleTransport = new winston.transports.Console({
-  format: winston.format.combine(
-    winston.format.simple(),
-    winston.format.colorize({
-      all: true,
-      colors: { info: "green", warn: "orange", error: "red" },
-    })
-  ),
+  format: winston.format.simple(),
 });
 
 interface Options {
