@@ -34,6 +34,7 @@
     "@newrelic/native-metrics": "^7.1.0",
     "cuid": "^2.1.8",
     "nest-winston": "^1.6.2",
+    "systeminformation": "^5.10.2",
     "winston": "^3.4.0",
     "winston-loki": "^6.0.3"
   },

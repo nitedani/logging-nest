@@ -5,26 +5,10 @@ import { LoggingInterceptor } from "./nest/http.interceptor";
 import { AllExceptionsFilter } from "./nest/exception.filter";
 import * as winston from "winston";
 import { INestApplication } from "@nestjs/common";
-import * as getMetricEmitter from "@newrelic/native-metrics";
+
 //@ts-ignore
 import LokiTransport = require("winston-loki");
-/*
-
-if (emitter.gcEnabled) {
-  setInterval(() => {
-    const gcMetrics = emitter.getGCMetrics();
-    for (const type in gcMetrics) {
-      console.log("GC type name:", type);
-      console.log("GC type id:", gcMetrics[type].typeId);
-      console.log("GC metrics:", gcMetrics[type].metrics);
-    }
-  }, 1000);
-}
-
-if (emitter.usageEnabled) {
-  emitter.on("usage", (usage) => console.log(usage));
-}
-*/
+import { runSamplers } from "./common/sampler";
 
 const consoleTransport = new winston.transports.Console({
   format: winston.format.simple(),
@@ -80,17 +64,7 @@ const logging = (app: INestApplication, options?: Options) => {
     _logger.error(error);
   });
 
-  setInterval(() => {
-    _logger.debug!({ memory: process.memoryUsage() });
-  }, 10000);
-
-  const emitter = getMetricEmitter({ timeout: 15000 });
-  emitter.unbind();
-  emitter.bind(10000);
-  setInterval(() => {
-    const loopMetrics = emitter.getLoopMetrics();
-    _logger.debug!({ loopMetrics: loopMetrics.usage });
-  }, 10000);
+  runSamplers();
 
   /*
     app.use(async (req, res: Response, next) => {

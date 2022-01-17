@@ -1,4 +1,4 @@
-import { ArgumentsHost, Catch, HttpException } from "@nestjs/common";
+import { ArgumentsHost, Catch } from "@nestjs/common";
 import { getInfo } from "../common/format";
 import { Logger } from "../common/logger";
 
@@ -7,7 +7,10 @@ export class AllExceptionsFilter {
   constructor(private logger: Logger) {}
 
   getStatus(exception: any) {
-    return exception instanceof HttpException ? exception.getStatus() : 500;
+    if (typeof exception === "object") {
+      return exception.status || exception.statusCode || 500;
+    }
+    return 500;
   }
 
   catch(exception: any, host: ArgumentsHost) {
@@ -26,14 +29,10 @@ export class AllExceptionsFilter {
 
     const toLog = getInfo(request, response, exception);
 
-    if (exception instanceof HttpException) {
-      if (exception.getStatus() >= 500) {
-        this.logger.error(toLog);
-      } else {
-        this.logger.warn(toLog);
-      }
-    } else {
+    if (status >= 500) {
       this.logger.error(toLog);
+    } else {
+      this.logger.warn(toLog);
     }
   }
 }
