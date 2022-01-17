@@ -10,6 +10,9 @@ export class Formatter {
     }
 
     if (typeof info === "object") {
+      if (info.context?.includes("ExceptionsHandler")) {
+        return false;
+      }
       Object.assign(logObj, info);
     } else {
       logObj.message = info;
@@ -18,20 +21,6 @@ export class Formatter {
     return logObj;
   }
 }
-
-export const getErrorJson = (error: any) => {
-  if (typeof error === "object") {
-    const message = error.message;
-    const status = error.status || error.statusCode || 500;
-
-    return {
-      message,
-      status,
-    };
-  }
-
-  return { message: error, status: 500 };
-};
 
 export const getError = (error: any) => {
   if (typeof error === "object") {

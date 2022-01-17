@@ -6,27 +6,20 @@ import {
 } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
-import { getInfo } from "../common/format";
-import { Logger } from "../common/logger";
+import { ctx } from "../common/storage";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(private logger: Logger) {}
-
   public intercept(
-    context: ExecutionContext,
+    _context: ExecutionContext,
     call$: CallHandler
   ): Observable<unknown> {
-    const req = context.switchToHttp().getRequest();
-    const res = context.switchToHttp().getResponse();
-    req.start = Date.now();
-
     return call$.handle().pipe(
-      tap((): void => {
-        res.once("close", () => {
-          const toLog = getInfo(req, res);
-          this.logger.log(toLog);
-        });
+      tap({
+        next: () => {},
+        error: (error) => {
+          ctx()!.error = error;
+        },
       })
     );
   }

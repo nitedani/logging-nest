@@ -1,14 +1,13 @@
-import { Logger } from "./common/logger";
-import { Formatter } from "./common/format";
-import { setLogger, withContext } from "./common/storage";
-import { LoggingInterceptor } from "./nest/http.interceptor";
-import { AllExceptionsFilter } from "./nest/exception.filter";
-import * as winston from "winston";
 import { INestApplication } from "@nestjs/common";
+import * as winston from "winston";
+import { Formatter, getInfo } from "./common/format";
+import { Logger } from "./common/logger";
+import { runSamplers } from "./common/sampler";
+import { ctx, setLogger, withContext } from "./common/storage";
+import { LoggingInterceptor } from "./nest/http.interceptor";
 
 //@ts-ignore
 import LokiTransport = require("winston-loki");
-import { runSamplers } from "./common/sampler";
 
 const consoleTransport = new winston.transports.Console({
   format: winston.format.simple(),
@@ -22,6 +21,27 @@ interface Options {
     level?: string;
   };
 }
+
+const createLoggerMiddleware = (logger) => (req, res, next) => {
+  req.start = Date.now();
+  req.socket._prevBytesWritten = req.socket.bytesWritten;
+  next();
+
+  res.once("finish", () => {
+    const error = ctx()!.error;
+    const toLog = getInfo(req, res, error);
+
+    if (res.statusCode < 400 && res.statusCode >= 200) {
+      logger.log(toLog);
+    } else {
+      if (res.statusCode >= 500) {
+        logger.error(toLog);
+      } else {
+        logger.warn(toLog);
+      }
+    }
+  });
+};
 
 const logging = (app: INestApplication, options?: Options) => {
   app.use(withContext);
@@ -40,11 +60,6 @@ const logging = (app: INestApplication, options?: Options) => {
     transports.push(lokiTransport);
   }
 
-  app.use((req, _res, next) => {
-    req.socket._prevBytesWritten = req.socket.bytesWritten;
-    next();
-  });
-
   const logger = winston.createLogger({
     format: new Formatter(),
     transports,
@@ -52,9 +67,9 @@ const logging = (app: INestApplication, options?: Options) => {
   setLogger(logger);
   const _logger = new Logger();
 
+  app.use(createLoggerMiddleware(_logger));
   app.useLogger(_logger);
-  app.useGlobalInterceptors(new LoggingInterceptor(_logger));
-  app.useGlobalFilters(new AllExceptionsFilter(_logger));
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   process.on("uncaughtException", (error) => {
     _logger.error(error);
