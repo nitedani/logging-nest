@@ -4,9 +4,9 @@ import {
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
+import { ctx } from "@nitedani/logging-core";
 import { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
-import { ctx } from "../common/storage";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
