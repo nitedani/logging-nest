@@ -11,9 +11,6 @@ import { NestFormatter } from "./nest/formatter";
 import { LoggingInterceptor } from "./nest/http.interceptor";
 import { Logger } from "./nest/logger";
 
-//@ts-ignore
-import LokiTransport = require("winston-loki");
-
 const logging = (app: INestApplication, options?: Options) => {
   const logger = createLogger(options);
   logger.format = new NestFormatter();
