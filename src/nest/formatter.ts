@@ -5,7 +5,7 @@ export class NestFormatter extends Formatter {
     if (typeof info === "object") {
       // Dont log messages from the default ExceptionsHandler,
       // to avoid duplicate error messages
-      if (info.context?.includes("ExceptionsHandler")) {
+      if (JSON.stringify(info.context).includes("ExceptionsHandler")) {
         return false;
       }
     }
