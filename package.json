@@ -1,6 +1,6 @@
 {
   "name": "@nitedani/logging-nestjs",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "",
   "main": "lib/cjs/index.js",
   "author": {
@@ -23,7 +23,7 @@
     "build": "npm run build:esm && npm run  build:cjs",
     "build:esm": "tsc",
     "build:cjs": "tsc --module commonjs --outDir lib/cjs",
-    "prepare": "install-peers"
+    "prepare": "install-peers -f"
   },
   "devDependencies": {
     "@types/node": "^17.x",
