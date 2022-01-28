@@ -13,24 +13,22 @@ import { NestFormatter } from "./nest/formatter";
 import { LoggingInterceptor } from "./nest/http.interceptor";
 import { Logger } from "./nest/logger";
 
-const logging = (app: INestApplication, options?: Options) => {
+const logging = (app: INestApplication, options: Options) => {
   Graceful.on("exit", () => app.close());
 
   const logger = createLogger(options);
   logger.format = new NestFormatter();
   setLogger(logger);
 
-  if (options?.tempo) {
-    const tracer = createTracer(options);
-    tracer
-      .start()
-      .then(() => {
-        logger.info("Tracing initialized");
-      })
-      .catch((error) => {
-        logger.error(error);
-      });
-  }
+  const tracer = createTracer(options);
+  tracer
+    .start()
+    .then(() => {
+      logger.info("Tracing initialized");
+    })
+    .catch((error) => {
+      logger.error(error);
+    });
 
   // Create async context with requestId
   app.use(withContext);
