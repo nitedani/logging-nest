@@ -44,11 +44,36 @@ const logging = (app: INestApplication, options: Options) => {
   app.useLogger(new Logger());
 
   process.on("uncaughtException", (error) => {
-    logger.error(error);
+    logger.error({
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      labels: {
+        context: "background",
+      },
+    });
   });
 
   process.on("unhandledRejection", (error) => {
-    logger.error(error);
+    if (error instanceof Error) {
+      logger.error({
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        labels: {
+          context: "background",
+        },
+      });
+    } else if (typeof error === "object") {
+      logger.error({
+        ...error,
+        labels: {
+          context: "background",
+        },
+      });
+    } else {
+      logger.error({ error, labels: { context: "background" } });
+    }
   });
 
   runSamplers();
